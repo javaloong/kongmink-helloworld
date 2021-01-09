@@ -1,0 +1,1 @@
+A lightweight modular java application, the aim is to keep the application simple but extensible. 
