@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+logging:
+  file:
+    path: logs/
+  level:
+    root: INFO
+    
+spring:
+  profiles.active: dev
+  pf4j:
+    runtime-mode: development
+    enabled: true
+    plugins-root: ../plugins
+    controller:
+      base-path: pf4j
