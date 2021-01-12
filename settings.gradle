@@ -6,4 +6,5 @@ pluginManagement {
 
 rootProject.name = 'kongmink'
 
-include 'kongmink-app'
+include 'kongmink-api',
+        'kongmink-app'
