@@ -1,3 +1,7 @@
+def isPluginProject(Project project) {
+    return project.hasProperty("plugin")
+}
+
 plugins {
     id 'io.spring.dependency-management' version '1.0.10.RELEASE' apply false
     id 'org.unbroken-dome.test-sets' version '3.0.1' apply false
@@ -13,8 +17,8 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'org.unbroken-dome.test-sets'
     
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
     
     dependencyManagement {
         imports {
@@ -22,7 +26,24 @@ subprojects {
         }
     }
     
-    tasks.withType(JavaCompile) { options.encoding = "UTF-8" }
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+    
+    tasks.withType(Javadoc) {
+        options.encoding = 'UTF-8'
+        if(JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
+    }
+    
+    jar {
+        manifest.attributes provider: 'gradle'
+        enabled true
+        doFirst {
+            archiveFileName = "$project.name-${archiveVersion.get()}.${archiveExtension.get()}"
+        }
+    } 
     
     repositories {
         mavenLocal()
@@ -43,5 +64,50 @@ subprojects {
  
     tasks.withType(Test) {
         reports.html.destination = file("${reporting.baseDir}/${name}")
+    }
+    
+    configurations {
+        localLibs
+        compile.extendsFrom(localLibs)
+    }
+    
+    dependencies {
+        localLibs fileTree(dir: 'libs', include: '**')
+        annotationProcessor "org.pf4j:pf4j:${pf4jVersion}"
+        testAnnotationProcessor "org.pf4j:pf4j:${pf4jVersion}"
+    }
+    
+    //*************************************************************************
+    // Plugin
+    //*************************************************************************
+
+    if (isPluginProject(project)) {
+
+        Properties pluginProp = new Properties()
+        pluginProp.load(file('plugin.properties').newDataInputStream())
+
+        task buildPlugin(type: Jar) {
+            group 'build'
+            dependsOn build
+            manifest.attributes(
+                    "Plugin-Id": pluginProp.get("plugin.id"),
+                    "Plugin-Class": pluginProp.get("plugin.class"),
+                    "Plugin-Version": pluginProp.get("plugin.version"),
+                    "Plugin-Provider": pluginProp.get("plugin.provider"),
+                    "Plugin-Dependencies": pluginProp.get("plugin.dependencies"))
+            from configurations.localLibs.asFileTree.files.collect { zipTree(it) } // flat all lib classes into a fat Jar
+//            from configurations.localLibs.asFileTree.files
+            with jar
+            doLast {
+                // Deploy built plugins...
+            }
+        }
+
+        task deployPluginToLocal(type: Copy) {
+            group 'build'
+            dependsOn buildPlugin
+            from "$buildDir/libs/"
+            into "$rootDir/plugins/${plugin}/"
+        }
     }
 }

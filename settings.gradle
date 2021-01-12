@@ -7,4 +7,7 @@ pluginManagement {
 rootProject.name = 'kongmink'
 
 include 'kongmink-api',
-        'kongmink-app'
+        'kongmink-app',
+        'kongmink-plugin-helloworld'
+        
+project(":kongmink-plugin-helloworld").projectDir = file("plugins/kongmink-plugin-helloworld")
