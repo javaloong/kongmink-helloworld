@@ -12,6 +12,8 @@ spring:
   pf4j:
     runtime-mode: development
     enabled: true
+    lib-directories:
+      - "libs"
     plugins-root: ../plugins
     controller:
-      base-path: pf4j
+      base-path: admin
