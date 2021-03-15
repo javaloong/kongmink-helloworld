@@ -11,6 +11,6 @@ public class HelloworldRegister implements PluginRegister {
 
     @Override
     public String name() {
-        return "hellword";
+        return "helloworld";
     }
 }
