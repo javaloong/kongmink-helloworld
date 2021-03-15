@@ -4,10 +4,10 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'kongmink'
+rootProject.name = 'kongmink-helloworld'
 
-include 'kongmink-api',
-        'kongmink-app',
-        'kongmink-plugin-helloworld'
+include 'demo-api',
+        'demo-app',
+        'demo-plugin-helloworld'
         
-project(":kongmink-plugin-helloworld").projectDir = file("plugins/kongmink-plugin-helloworld")
+project(":demo-plugin-helloworld").projectDir = file("plugins/demo-plugin-helloworld")

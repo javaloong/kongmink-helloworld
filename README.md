@@ -1,1 +1,1 @@
-A lightweight modular java application, the aim is to keep the application simple but extensible. 
+A demo project to test the Spring boot plugin library.
