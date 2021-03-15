@@ -1,3 +1,11 @@
+def isApplicationProject(String projectName) {
+    return projectName.endsWith('-app')
+}
+
+def isLibraryProject(String projectName) {
+    return projectName.endsWith('-api')
+}
+
 def isPluginProject(Project project) {
     return project.hasProperty("plugin")
 }
@@ -16,6 +24,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'org.unbroken-dome.test-sets'
+	apply plugin: 'maven-publish'
     
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -65,16 +74,23 @@ subprojects {
     tasks.withType(Test) {
         reports.html.destination = file("${reporting.baseDir}/${name}")
     }
-    
-    configurations {
-        localLibs
-        compile.extendsFrom(localLibs)
+	
+	//*************************************************************************
+    // Build Tasks
+    //*************************************************************************
+
+    task("buildApp") {
+        finalizedBy jar
     }
-    
-    dependencies {
-        localLibs fileTree(dir: 'libs', include: '**')
-        annotationProcessor "org.pf4j:pf4j:${pf4jVersion}"
-        testAnnotationProcessor "org.pf4j:pf4j:${pf4jVersion}"
+	
+	if (isApplicationProject(name)) {
+        
+        task deployToLocal(type: Copy) {
+            group 'build'
+            dependsOn build
+            from "$buildDir/libs/"
+            into "$rootDir/build/${project.name}"
+        }
     }
     
     //*************************************************************************
@@ -82,6 +98,17 @@ subprojects {
     //*************************************************************************
 
     if (isPluginProject(project)) {
+	
+		configurations {
+			localLibs
+			compile.extendsFrom(localLibs)
+		}
+		
+		dependencies {
+			localLibs fileTree(dir: 'libs', include: '**')
+			annotationProcessor "org.pf4j:pf4j:${pf4jVersion}"
+			testAnnotationProcessor "org.pf4j:pf4j:${pf4jVersion}"
+		}
 
         Properties pluginProp = new Properties()
         pluginProp.load(file('plugin.properties').newDataInputStream())
@@ -103,11 +130,33 @@ subprojects {
             }
         }
 
-        task deployPluginToLocal(type: Copy) {
+        task deployToLocal(type: Copy) {
             group 'build'
             dependsOn buildPlugin
             from "$buildDir/libs/"
-            into "$rootDir/plugins/${plugin}/"
+            into "$rootDir/build/${plugin}/plugins"
+        }
+    }
+	
+	//*************************************************************************
+    // Maven
+    //*************************************************************************
+    
+    if (isLibraryProject(name)) {
+        task sourcesJar(type: Jar) {
+            from sourceSets.main.allJava
+            classifier = 'sources'
+        }
+    
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    version = project.hasProperty('release') ? project.version - '-SNAPSHOT' : project.version
+                    
+                    from components.java
+                    artifact sourcesJar
+                }
+            }
         }
     }
 }
